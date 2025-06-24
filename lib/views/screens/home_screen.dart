@@ -1,9 +1,8 @@
+// home_screen.dart
 import 'package:flutter/material.dart';
-import 'package:mini_social/controllers/post_controller.dart';
-import 'package:mini_social/controllers/auth_controller.dart';
-import 'package:mini_social/views/widgets/bottom_nav_bar.dart';
-import 'package:mini_social/views/screens/create_post_screen.dart';
-import 'package:mini_social/views/screens/profile_screen.dart';
+import '../../controllers/barang_controller.dart';
+import '../../models/item.dart';
+import 'create_barang_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,197 +12,88 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  final List<Widget> _screens = [
-    const HomeContent(),
-    const CreatePostScreen(),
-    const ProfileScreen(),
-  ];
+  final BarangController _controller = BarangController();
+  List<Barang> _barangList = [];
 
-  void _onNavTap(int index) {
+  @override
+  void initState() {
+    super.initState();
+    _loadBarang();
+  }
+
+  Future<void> _loadBarang() async {
+    final items = await _controller.getAllBarang();
     setState(() {
-      _currentIndex = index;
+      _barangList = items;
     });
+  }
+
+  void _addBarang() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateBarangScreen()),
+    );
+    if (result == true) _loadBarang();
+  }
+
+  void _editBarang(Barang barang) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CreateBarangScreen(editBarang: barang)),
+    );
+    if (result == true) _loadBarang();
+  }
+
+  Future<void> _deleteBarang(String id) async {
+    await _controller.deleteBarang(id);
+    _loadBarang();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mini Social'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authController = AuthController();
-              final success = await authController.logout();
-
-              if (success && context.mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
-            },
-          ),
-        ],
-      ),
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavTap,
-      ),
-    );
-  }
-}
-
-class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
-
-  @override
-  State<HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends State<HomeContent> {
-  final _postController = PostController();
-  List<Map<String, dynamic>> _posts = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPosts();
-  }
-
-  Future<void> _loadPosts() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final posts = await _postController.getPosts();
-
-    if (mounted) {
-      setState(() {
-        _posts = posts;
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_posts.isEmpty) {
-      return const Center(
-        child: Text('No posts yet. Be the first to post!'),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadPosts,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(8),
-        itemCount: _posts.length,
-        itemBuilder: (context, index) {
-          final post = _posts[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundImage: post['user']['avatar_url'] != null
-                            ? NetworkImage(post['user']['avatar_url'])
-                            : null,
-                        child: post['user']['avatar_url'] == null
-                            ? Text(post['user']['name'][0].toUpperCase())
-                            : null,
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post['user']['name'],
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          Text(
-                            post['created_at'],
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    post['title'],
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    post['content'],
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  if (post['image_url'] != null) ...[
-                    const SizedBox(height: 8),
-                    Image.network(
-                      post['image_url'],
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+      appBar: AppBar(title: const Text('Daftar Barang')),
+      body: _barangList.isEmpty
+          ? const Center(child: Text('Belum ada barang.'))
+          : ListView.builder(
+              itemCount: _barangList.length,
+              itemBuilder: (context, index) {
+                final barang = _barangList[index];
+                return Card(
+                  margin: const EdgeInsets.all(8),
+                  child: ListTile(
+                    leading: barang.imageUrl.isNotEmpty
+                        ? Image.network(barang.imageUrl, width: 50, height: 50)
+                        : const Icon(Icons.image),
+                    title: Text(barang.nama),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(barang.deskripsi),
+                        Text('Rp ${barang.harga}'),
+                      ],
                     ),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton.icon(
-                        onPressed: () async {
-                          final success = post['is_liked']
-                              ? await _postController.unlikePost(post['id'])
-                              : await _postController.likePost(post['id']);
-
-                          if (success) {
-                            _loadPosts();
-                          }
-                        },
-                        // icon: Icon(
-                        //   post['is_liked']
-                        //       ? Icons.favorite
-                        //       : Icons.favorite_border,
-                        //   color: post['is_liked'] ? Colors.red : null,
-                        // ),
-                        // label: Text('${post['likes_count']}'),
-                        icon: const Icon(Icons.favorite_border),
-                        label: const Text('Like'),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-            
-                        },
-                        icon: const Icon(Icons.comment_outlined),
-                        // label: Text('${post['comments_count']}'),
-                        label: const Text('Comment'),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          
-                        },
-                        icon: const Icon(Icons.share_outlined),
-                        label: const Text('Share'),
-                      ),
-                    ],
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _editBarang(barang),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteBarang(barang.id),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
-          );
-        },
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addBarang,
+        child: const Icon(Icons.add),
       ),
     );
   }
-} 
+}

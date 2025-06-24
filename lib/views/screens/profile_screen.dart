@@ -53,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              
+              // Aksi edit profile
             },
           ),
         ],
@@ -75,11 +75,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                _user!['name'],
+                _user!['name'] ?? 'Unknown',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                _user!['email'],
+                _user!['email'] ?? '',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.grey,
                     ),
@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('Edit Profile'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  
+                  // Aksi edit
                 },
               ),
               ListTile(
@@ -107,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('Settings'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  
+                  // Aksi settings
                 },
               ),
               ListTile(
@@ -115,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('Help & Support'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  
+                  // Aksi help
                 },
               ),
               const Divider(),
@@ -141,7 +141,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Navigator.pop(context);
                             final success = await _authController.logout();
                             if (success && context.mounted) {
-                              Navigator.pushReplacementNamed(context, '/login');
+                              Navigator.pushReplacementNamed(
+                                  context, '/login');
                             }
                           },
                           child: const Text('Logout'),
@@ -157,4 +158,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-} 
+}
